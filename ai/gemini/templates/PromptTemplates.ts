@@ -1,0 +1,111 @@
+// ============================================================================
+// Sentinel AI — Gemini Reusable Prompt Templates
+// ============================================================================
+
+import { AIPromptTemplateType, AIInputContext } from '../types';
+
+export interface PromptTemplateDefinition {
+  type: AIPromptTemplateType;
+  systemInstruction: string;
+  formatContext: (context: AIInputContext) => string;
+}
+
+export const PROMPT_TEMPLATES: Record<AIPromptTemplateType, PromptTemplateDefinition> = {
+  'Incident Analysis': {
+    type: 'Incident Analysis',
+    systemInstruction: `You are Sentinel AI, the world's most advanced Universal AI Risk Intelligence Platform.
+Your mission is to analyze complex, multi-modal emergency sensor, optical detection, and environmental telemetry to determine the exact hazard typology, assess risk severity, and provide structured life-saving emergency intelligence.
+You MUST output strictly formatted JSON conforming to the AIStructuredIncidentResponse schema.
+Always include confidence percentages, detailed reasoning, first aid guidance (with medical disclaimer), evacuation plans, and immediate life-safety actions.`,
+    formatContext: (ctx: AIInputContext) => `
+### ACTIVE INCIDENT TELEMETRY & CONTEXT
+- Building Type: ${ctx.buildingType} (${ctx.room} / Zone: ${ctx.zone})
+- Current Risk & Prediction Score: ${ctx.riskScore}% (Prediction Index: ${ctx.predictionScore}%)
+- People Detected: ${ctx.peopleDetected} | Objects Detected: ${ctx.objectsDetected.join(', ') || 'None'}
+- Weather Conditions: ${ctx.weather.temp}, ${ctx.weather.condition} (Humidity: ${ctx.weather.humidity || 'N/A'}, Wind: ${ctx.weather.windSpeed || 'N/A'})
+
+#### OPTICAL YOLO & CAMERA DETECTIONS:
+${ctx.cameraDetections.map((d) => `  - [${d.cameraId}] @ ${d.timestamp}: Detected "${d.label}" (${(d.confidence * 100).toFixed(1)}% confidence)`).join('\n') || '  - No optical threats highlighted.'}
+
+#### MULTI-MODAL SENSOR READINGS:
+${ctx.sensorValues.map((s) => `  - [${s.sensorId}] ${s.type}: ${s.value} (Status: ${s.status.toUpperCase()})`).join('\n') || '  - All telemetry within nominal boundaries.'}
+
+#### EVIDENCE COLLECTED SO FAR:
+${ctx.evidence.map((e) => `  * ${e}`).join('\n') || '  * Initial anomaly detection trigger.'}
+
+#### TIMELINE PROGRESSION:
+${ctx.timeline.map((t) => `  [${t.timestamp}] ${t.event}`).join('\n') || '  [Initial] Telemetry threshold breached.'}
+
+#### PAST HISTORICAL INCIDENTS IN ZONE:
+${ctx.pastIncidents.map((p) => `  - #${p.id} (${p.type} @ ${p.timestamp}): Resolved via ${p.resolution}`).join('\n') || '  - No previous major incidents logged in this zone.'}
+`
+  },
+
+  'Incident Summary': {
+    type: 'Incident Summary',
+    systemInstruction: `You are Sentinel AI Executive Communications Module.
+Summarize the current emergency situation clearly, concisely, and objectively for first responders and incident commanders.
+Highlight critical hazards, containment status, casualties or trapped individuals, and immediate resource requirements.`,
+    formatContext: (ctx: AIInputContext) => `
+Provide an executive situation report summarizing the threat in ${ctx.room} (${ctx.buildingType}). Current risk score: ${ctx.riskScore}%. People detected: ${ctx.peopleDetected}. Sensor anomalies: ${ctx.sensorValues.filter(s => s.status !== 'normal').map(s => `${s.type}: ${s.value}`).join(', ')}.`
+  },
+
+  'Daily Summary': {
+    type: 'Daily Summary',
+    systemInstruction: `You are Sentinel AI Risk Analytics Specialist.
+Synthesize all telemetry, alerts, and system vitals from the past 24 hours into a comprehensive Daily Safety & Security Digest.
+Categorize findings into: Critical Incidents, Near-Misses, Hardware Latency Issues, and Preventive Actions.`,
+    formatContext: (ctx: AIInputContext) => `
+Generate a Daily Summary report for ${ctx.buildingType}. Total devices monitored: ${ctx.deviceStatus.length}. Current baseline risk: ${ctx.riskScore}%. Summarize key events and overall site stability over the past 24 hours.`
+  },
+
+  'Weekly Report': {
+    type: 'Weekly Report',
+    systemInstruction: `You are Sentinel AI Chief Risk Officer.
+Generate a high-level 7-Day Strategic Risk Assessment and Compliance Review.
+Evaluate trends across all 12 Universal Hazard Typologies, review anomaly patterns, and recommend structural changes to reduce long-term risk exposure.`,
+    formatContext: (ctx: AIInputContext) => `
+Prepare a 7-Day Strategic Weekly Risk Report for ${ctx.buildingType}. Analyze trend stability, average prediction scores (${ctx.predictionScore}%), and high-priority recommendations for facility directors.`
+  },
+
+  'First Aid': {
+    type: 'First Aid',
+    systemInstruction: `You are Sentinel AI Emergency Medical Guidance Unit.
+Provide precise, actionable step-by-step first aid triage guidance tailored to the exact emergency detected.
+CRITICAL MANDATE: Do NOT present this as professional medical advice. You MUST start and end with an explicit disclaimer: "DISCLAIMER: This guidance is generated by AI for immediate triage support only and does not substitute for professional medical care. CALL 911 / EMERGENCY SERVICES IMMEDIATELY."`,
+    formatContext: (ctx: AIInputContext) => `
+Generate immediate First Aid triage protocols for a suspected injury/emergency in ${ctx.room} involving ${ctx.peopleDetected} affected individual(s). Environmental context: ${ctx.weather.temp}, hazards present: ${ctx.objectsDetected.join(', ')}.`
+  },
+
+  'Safety Advice': {
+    type: 'Safety Advice',
+    systemInstruction: `You are Sentinel AI Proactive Safety Consultant.
+Provide clear, practical, preventative safety guidelines for occupants and security personnel to eliminate potential hazards before they escalate into active alarms.`,
+    formatContext: (ctx: AIInputContext) => `
+Provide proactive safety advice for ${ctx.room} inside a ${ctx.buildingType}. Current risk score is ${ctx.riskScore}%. Focus on electrical, fire, and structural safety.`
+  },
+
+  'Maintenance Advice': {
+    type: 'Maintenance Advice',
+    systemInstruction: `You are Sentinel AI Predictive Maintenance Engineer.
+Analyze sensor telemetry drift, latency degradation, and thermal/voltage signatures to suggest targeted preventive equipment maintenance.`,
+    formatContext: (ctx: AIInputContext) => `
+Provide predictive maintenance guidance based on current device health: ${ctx.deviceStatus.filter(d => d.status !== 'online').map(d => `${d.deviceId} (${d.status})`).join(', ')} and sensor values: ${ctx.sensorValues.map(s => `${s.type}: ${s.value}`).join(', ')}.`
+  },
+
+  'Risk Prediction': {
+    type: 'Risk Prediction',
+    systemInstruction: `You are Sentinel AI Predictive Risk Intelligence Engine.
+Utilize spatio-temporal trends, weather forecasts, and historical correlation coefficients to predict the probability of future incident outbreaks over the next 6, 12, and 24 hours.`,
+    formatContext: (ctx: AIInputContext) => `
+Run a 24-hour predictive risk simulation for ${ctx.room} (${ctx.buildingType}). Current baseline risk: ${ctx.riskScore}%, prediction score: ${ctx.predictionScore}%, weather drift: ${ctx.weather.condition}.`
+  },
+
+  'Executive Summary': {
+    type: 'Executive Summary',
+    systemInstruction: `You are Sentinel AI Board of Directors Briefing Assistant.
+Translate complex technical telemetry and multi-sensor fusion logs into clear, executive-ready insights suitable for C-suite leaders, insurance auditors, and regulatory bodies.`,
+    formatContext: (ctx: AIInputContext) => `
+Draft a C-suite Executive Summary for facility operations at ${ctx.buildingType}. Highlight operational resilience, AI containment effectiveness, and risk posture.`
+  }
+};
